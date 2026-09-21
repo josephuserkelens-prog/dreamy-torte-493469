@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Creaplay CRM</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
+  #login-screen {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; height: 100vh; background: #222;
+  }
+  #login-box {
+    background: white; padding: 30px; border-radius: 8px; width: 300px;
+  }
+  #login-box input {
+    width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box;
+  }
+  #login-box button {
+    width: 100%; padding: 10px; background: #007bff; color: white;
+    border: none; border-radius: 4px; cursor: pointer;
+  }
+  #error-msg { color: red; font-size: 14px; }
+  #app { display: none; padding: 20px; }
+  #topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    background: #333; color: white; padding: 10px 20px;
+  }
+  #logout-btn {
+    background: #dc3545; color: white; border: none; padding: 8px 14px;
+    border-radius: 4px; cursor: pointer;
+  }
+  #status-box {
+    margin-top: 20px; padding: 15px; background: white; border-radius: 6px;
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div id="login-box">
+    <h2>🔐 Creaplay CRM Login</h2>
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <p id="error-msg"></p>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div id="topbar">
+    <h2>📊 Creaplay CRM</h2>
+    <div>
+      <span id="user-email"></span>
+      <button id="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div id="status-box">
+    <h3>✅ Connection Status</h3>
+    <p id="firestore-status">Checking Firestore connection...</p>
+  </div>
+</div>
+
+<!-- FIREBASE SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getFirestore, collection, getDocs
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB7Z2wEFYzjqEZHEXTog4VVGKchTp-UyKU",
+    authDomain: "creaplay-production.firebaseapp.com",
+    projectId: "creaplay-production",
+    storageBucket: "creaplay-production.firebasestorage.app",
+    messagingSenderId: "149172973252",
+    appId: "1:149172973252:web:1744ebd5a0b3ea8cb06391"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  window.login = function() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    const errorMsg = document.getElementById("error-msg");
+    errorMsg.textContent = "";
+
+    signInWithEmailAndPassword(auth, email, password)
+      .catch((error) => {
+        errorMsg.textContent = "❌ " + error.message;
+      });
+  };
+
+  window.logout = function() {
+    signOut(auth);
+  };
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      document.getElementById("login-screen").style.display = "none";
+      document.getElementById("app").style.display = "block";
+      document.getElementById("user-email").textContent = "👤 " + user.email;
+      testFirestore();
+    } else {
+      document.getElementById("login-screen").style.display = "flex";
+      document.getElementById("app").style.display = "none";
+    }
+  });
+
+  async function testFirestore() {
+    const statusEl = document.getElementById("firestore-status");
+    try {
+      await getDocs(collection(db, "test"));
+      statusEl.textContent = "✅ Firestore connected successfully!";
+    } catch (e) {
+      statusEl.textContent = "⚠️ Firestore error: " + e.message;
+    }
+  }
+</script>
+
+</body>
+</html>
