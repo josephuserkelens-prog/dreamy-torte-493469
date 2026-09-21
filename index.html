@@ -29,8 +29,26 @@
     background: #dc3545; color: white; border: none; padding: 8px 14px;
     border-radius: 4px; cursor: pointer;
   }
-  #status-box {
-    margin-top: 20px; padding: 15px; background: white; border-radius: 6px;
+  nav button {
+    margin: 10px 5px 20px 0; padding: 8px 14px; cursor: pointer;
+    border: none; border-radius: 4px; background: #007bff; color: white;
+  }
+  .page { display: none; }
+  .page.active { display: block; }
+  #status-box, .form-box, .list-box {
+    margin-top: 10px; padding: 15px; background: white; border-radius: 6px;
+    max-width: 500px;
+  }
+  .form-box label { display: block; margin-top: 10px; font-weight: bold; }
+  .form-box input, .form-box select {
+    width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box;
+  }
+  .form-box button {
+    margin-top: 15px; padding: 10px 20px; background: #28a745; color: white;
+    border: none; border-radius: 4px; cursor: pointer;
+  }
+  .company-item {
+    border-bottom: 1px solid #ddd; padding: 10px 0;
   }
 </style>
 </head>
@@ -57,10 +75,74 @@
     </div>
   </div>
 
-  <div id="status-box">
-    <h3>✅ Connection Status</h3>
-    <p id="firestore-status">Checking Firestore connection...</p>
+  <nav>
+    <button onclick="showPage('dashboard')">🏠 Dashboard</button>
+    <button onclick="showPage('companies')">🏢 Companies</button>
+  </nav>
+
+  <!-- DASHBOARD PAGE -->
+  <div id="dashboard" class="page active">
+    <div id="status-box">
+      <h3>✅ Connection Status</h3>
+      <p id="firestore-status">Checking Firestore connection...</p>
+    </div>
   </div>
+
+  <!-- COMPANIES PAGE -->
+  <div id="companies" class="page">
+    <div class="form-box">
+      <h3>➕ Add New Company</h3>
+
+      <label>Company Name</label>
+      <input type="text" id="c-name">
+
+      <label>Street</label>
+      <input type="text" id="c-street">
+
+      <label>Zip Code</label>
+      <input type="text" id="c-zip">
+
+      <label>Place / City</label>
+      <input type="text" id="c-place">
+
+      <label>Country</label>
+      <select id="c-country">
+        <option>Belgium</option>
+        <option>Netherlands</option>
+        <option>Germany</option>
+        <option>France</option>
+        <option>United Kingdom</option>
+        <option>United States</option>
+        <option>Spain</option>
+        <option>Italy</option>
+        <option>Other</option>
+      </select>
+
+      <label>Email</label>
+      <input type="email" id="c-email">
+
+      <label>Type</label>
+      <select id="c-type">
+        <option>Reseller</option>
+        <option>Partner</option>
+        <option>Supplier</option>
+        <option>End User</option>
+        <option>Other</option>
+      </select>
+
+      <label>VAT Number</label>
+      <input type="text" id="c-vat">
+
+      <button onclick="saveCompany()">💾 Save Company</button>
+      <p id="company-msg"></p>
+    </div>
+
+    <div class="list-box">
+      <h3>📋 Companies List</h3>
+      <div id="companies-list">Loading...</div>
+    </div>
+  </div>
+
 </div>
 
 <!-- FIREBASE SDK -->
@@ -70,7 +152,7 @@
     getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import {
-    getFirestore, collection, getDocs
+    getFirestore, collection, getDocs, addDoc, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -86,6 +168,7 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
+  // LOGIN
   window.login = function() {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
@@ -108,6 +191,7 @@
       document.getElementById("app").style.display = "block";
       document.getElementById("user-email").textContent = "👤 " + user.email;
       testFirestore();
+      loadCompanies();
     } else {
       document.getElementById("login-screen").style.display = "flex";
       document.getElementById("app").style.display = "none";
@@ -123,7 +207,9 @@
       statusEl.textContent = "⚠️ Firestore error: " + e.message;
     }
   }
-</script>
 
-</body>
-</html>
+  // NAVIGATION
+  window.showPage = function(pageId) {
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    document.getElementById(pageId).classList.add("active");
+  };
